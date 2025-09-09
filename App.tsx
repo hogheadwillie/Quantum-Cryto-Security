@@ -1,99 +1,63 @@
-import React, { useState } from 'react';
-import { GoogleGenAI } from "@google/genai";
+import React from 'react';
 import Header from './components/Header';
-import RecommendationItem from './components/RecommendationItem';
 import SummaryTable from './components/SummaryTable';
 import AuthModal from './components/AuthModal';
-import { getRecommendationsData, getSummaryData } from './constants';
+import { MOCK_SUMMARY_DATA } from './constants';
 import { useAuth } from './context/AuthContext';
 import { useLanguage } from './context/LanguageContext';
-import { Recommendation } from './types';
-import FeedbackMessage from './components/FeedbackMessage';
+import Card from './components/Card';
+import RecommendationItem from './components/RecommendationItem';
 
 const App: React.FC = () => {
-  const { isAuthenticated, feedback, setFeedback } = useAuth();
+  const { isAuthenticated } = useAuth();
   const { t } = useLanguage();
 
-  const RECOMMENDATIONS_DATA = getRecommendationsData(t);
-  const SUMMARY_DATA = getSummaryData(t);
-
-  const [recommendations, setRecommendations] = useState<Recommendation[]>(RECOMMENDATIONS_DATA);
-  const [elaboratingId, setElaboratingId] = useState<number | null>(null);
-
-  const handleFetchElaboration = async (item: Recommendation) => {
-    if (item.elaboration) return; // Don't fetch if already present
-
-    setElaboratingId(item.id);
-    try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      const prompt = `As a cybersecurity expert specializing in blockchain and enterprise systems, elaborate on this security recommendation.
-      Title: "${item.title}"
-      Recommendation: "${item.recommendation}"
-      Action Plan: ${item.actionPlan.map(a => `\n- ${a}`).join('')}
-      
-      Explain *why* this is important, the common risks if not addressed, and provide a more detailed technical overview of how to implement the action plan. Format your response in simple markdown.`;
-
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt,
-      });
-      const elaborationText = response.text;
-      
-      setRecommendations(prev => 
-        prev.map(rec => rec.id === item.id ? { ...rec, elaboration: elaborationText } : rec)
-      );
-
-    } catch (error) {
-      console.error("Full error details from AI elaboration API:", error);
-      setFeedback({ message: t('aiError'), type: 'error' });
-    } finally {
-      setElaboratingId(null);
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-gray-900 text-gray-200 font-sans">
-       <div className="fixed top-28 right-8 z-50 w-full max-w-sm">
-          {feedback && <FeedbackMessage type={feedback.type} message={feedback.message} />}
-      </div>
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <Header />
-        <AuthModal />
+    <div className="bg-gray-900 text-white min-h-screen font-sans">
+      <div className="absolute top-0 left-0 w-full h-full bg-grid-gray-700/[0.2] [mask-image:linear-gradient(to_bottom,white_5%,transparent_90%)]"></div>
+      <div className="absolute inset-0 bg-gradient-to-b from-gray-900 via-gray-900/80 to-transparent"></div>
+      
+      <Header />
 
-        <main>
-          {isAuthenticated ? (
-            <>
-              <div className="mt-12">
-                <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">{t('priorityRecommendations')}</h2>
-                <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                  {recommendations.map((item) => (
-                    <RecommendationItem 
-                      key={item.id} 
-                      item={item} 
-                      onElaborate={handleFetchElaboration}
-                      isElaborating={elaboratingId === item.id}
-                    />
-                  ))}
-                  <div className="hidden lg:block"></div>
-                </div>
-              </div>
-              <div className="mt-20">
-                 <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">{t('summaryTitle')}</h2>
-                 <SummaryTable data={SUMMARY_DATA} />
-              </div>
-            </>
-          ) : (
-            <div className="text-center mt-20 bg-gray-800/50 border border-gray-700 rounded-xl p-12 max-w-2xl mx-auto">
-                <h2 className="text-3xl font-bold text-white">{t('welcome')}</h2>
-                <p className="text-gray-400 mt-4">{t('loginPrompt')}</p>
+      <main className="container mx-auto px-4 py-8 relative z-10">
+        <div className="text-center my-12">
+          <h1 className="text-4xl md:text-6xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-b from-white to-gray-400">
+            {t('header.title')}
+          </h1>
+          <p className="mt-4 text-lg text-gray-400 max-w-2xl mx-auto">
+            Actionable, AI-driven insights to enhance your application's security and performance.
+          </p>
+        </div>
+
+        {isAuthenticated ? (
+          <div>
+            <Card>
+              <h2 className="text-2xl font-semibold text-white mb-4">Priority Recommendations</h2>
+              <SummaryTable data={MOCK_SUMMARY_DATA} />
+            </Card>
+
+            <div className="grid md:grid-cols-2 gap-8 mt-8">
+                <RecommendationItem 
+                    title="Database Indexing Strategy"
+                    description="Our analysis suggests creating composite indexes on user and transaction tables to reduce query latency by up to 45%."
+                    area="Performance"
+                />
+                 <RecommendationItem 
+                    title="Dependency Audit"
+                    description="Found 3 medium-severity vulnerabilities in outdated npm packages. Recommended to run `npm audit fix` and verify."
+                    area="Security"
+                />
             </div>
-          )}
-        </main>
+          </div>
+        ) : (
+          <div className="text-center p-8 bg-gray-800/50 border border-gray-700 rounded-xl">
+            <h2 className="text-2xl font-semibold">Welcome</h2>
+            <p className="text-gray-400 mt-2">Please log in to view your security dashboard.</p>
+          </div>
+        )}
+      </main>
 
-        <footer className="mt-20 text-center text-gray-500">
-            <p>{t('footerText')}</p>
-        </footer>
-      </div>
+      <AuthModal />
     </div>
   );
 };

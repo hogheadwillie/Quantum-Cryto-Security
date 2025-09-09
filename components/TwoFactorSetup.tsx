@@ -1,5 +1,7 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+// FIX: Add import for jsQR to resolve 'Cannot find name' error.
+import jsQR from 'jsqr';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import Spinner from './Spinner';

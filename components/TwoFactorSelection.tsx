@@ -1,5 +1,4 @@
 import React from 'react';
-// FIX: Correct import path for context
 import { useLanguage } from '../context/LanguageContext';
 
 interface TwoFactorSelectionProps {
