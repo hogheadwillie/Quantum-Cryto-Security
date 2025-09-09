@@ -1,0 +1,7 @@
+{
+  "name": "Copy of PQC Production Readiness Roadmap",
+  "description": "An interactive web application displaying critical recommendations for transitioning a Post-Quantum Cryptography (PQC) prototype to a production-ready enterprise system.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
