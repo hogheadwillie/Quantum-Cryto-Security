@@ -1,0 +1,44 @@
+static_resources:
+  listeners:
+  - name: l0
+    address: { socket_address: { address: 0.0.0.0, port_value: 8080 } }
+    filter_chains:
+    - filters:
+      - name: envoy.filters.network.http_connection_manager
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+          stat_prefix: ingress_http
+          route_config:
+            name: local
+            virtual_hosts:
+            - name: all
+              domains: ["*"]
+              routes:
+              - match: { prefix: "/identity/" }
+                route: { cluster: identity }
+              - match: { prefix: "/entropy/" }
+                route: { cluster: entropy }
+              - match: { prefix: "/qsvault/" }
+                route: { cluster: qsvault }
+              - match: { prefix: "/network/" }
+                route: { cluster: iprotation }
+              - match: { prefix: "/telecomguard/" }
+                route: { cluster: telecomguard }
+          http_filters:
+          - name: envoy.filters.http.router
+  clusters:
+  - name: identity
+    type: logical_dns
+    load_assignment: { cluster_name: identity, endpoints: [{ lb_endpoints: [{ endpoint: { address: { socket_address: { address: identity, port_value: 8000 }}}}]}]}
+  - name: entropy
+    type: logical_dns
+    load_assignment: { cluster_name: entropy, endpoints: [{ lb_endpoints: [{ endpoint: { address: { socket_address: { address: quantum-entropy, port_value: 8001 }}}}]}]}
+  - name: qsvault
+    type: logical_dns
+    load_assignment: { cluster_name: qsvault, endpoints: [{ lb_endpoints: [{ endpoint: { address: { socket_address: { address: qsvault, port_value: 8002 }}}}]}]}
+  - name: iprotation
+    type: logical_dns
+    load_assignment: { cluster_name: iprotation, endpoints: [{ lb_endpoints: [{ endpoint: { address: { socket_address: { address: ip-rotation-qkd, port_value: 8003 }}}}]}]}
+  - name: telecomguard
+    type: logical_dns
+    load_assignment: { cluster_name: telecomguard, endpoints: [{ lb_endpoints: [{ endpoint: { address: { socket_address: { address: telecomguard, port_value: 8004 }}}}]}]}

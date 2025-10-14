@@ -1,0 +1,35 @@
+version: "3.9"
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_PASSWORD: postgres
+    ports: ["5432:5432"]
+  nats:
+    image: nats:2.10
+    ports: ["4222:4222", "8222:8222"]
+  identity:
+    build: ./apps/identity
+    environment:
+      DATABASE_URL: postgresql+psycopg2://postgres:postgres@db:5432/postgres
+      JWT_SECRET: dev_secret_change_me
+    depends_on: [db]
+  qsvault:
+    build: ./apps/qsvault
+    environment:
+      DATABASE_URL: postgresql+psycopg2://postgres:postgres@db:5432/postgres
+    depends_on: [db]
+  quantum-entropy:
+    build: ./apps/quantum-entropy
+    depends_on: [db, nats]
+  ip-rotation-qkd:
+    build: ./apps/ip-rotation-qkd
+    depends_on: [nats]
+  telecomguard:
+    build: ./apps/telecomguard
+    depends_on: [db, nats]
+  gateway:
+    image: envoyproxy/envoy:latest
+    volumes: ["./platform/gateway/envoy.yaml:/etc/envoy/envoy.yaml"]
+    ports: ["8080:8080"]
+    depends_on: [identity, qsvault, quantum-entropy, ip-rotation-qkd, telecomguard]
